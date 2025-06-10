@@ -1,0 +1,5 @@
+*.key
+*.pem
+private_*
+.env
+config.json

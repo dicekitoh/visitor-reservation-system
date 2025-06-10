@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+    <title>面会予約システム - 前日申し込み専用</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .container {
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .form-card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
+        }
+        
+        input[type="text"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.3s ease;
+            -webkit-appearance: none;
+        }
+        
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        input[type="date"]:disabled {
+            background: #f5f5f5;
+            color: #666;
+            cursor: not-allowed;
+        }
+        
+        .time-section {
+            margin-top: 15px;
+        }
+        
+        .time-period {
+            margin-bottom: 15px;
+        }
+        
+        .time-period-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .time-slot {
+            padding: 12px 6px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        
+        .time-slot:hover:not(.disabled) {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .time-slot:active:not(.disabled) {
+            transform: scale(0.95);
+        }
+        
+        .time-slot.selected {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .time-slot.disabled {
+            background: #f5f5f5;
+            color: #999;
+            border-color: #ddd;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        /* スマホ最適化時間選択 */
+        .time-grid-mobile {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 10px;
+        }
+        
+        .time-slot-mobile {
+            padding: 18px 12px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .time-slot-mobile:hover:not(.disabled) {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        
+        .time-slot-mobile:active:not(.disabled) {
+            transform: scale(0.95);
+        }
+        
+        .time-slot-mobile.selected {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .time-slot-mobile.disabled {
+            background: #f5f5f5;
+            color: #999;
+            border-color: #ddd;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .result {
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+            animation: slideIn 0.4s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .success {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+        
+        .error {
+            background: linear-gradient(135deg, #f56565, #e53e3e);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+        }
+        
+        .required {
+            color: #e53e3e;
+            font-weight: bold;
+        }
+        
+        .lunch-notice {
+            background: linear-gradient(135deg, #fed7d7, #feb2b2);
+            color: #742a2a;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: center;
+            margin: 10px 0;
+            border: 1px solid #fc8181;
+        }
+        
+        .schedule-preview {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .schedule-preview.show {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .schedule-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .schedule-details {
+            font-size: 14px;
+            color: #4a5568;
+            line-height: 1.5;
+        }
+
+        .date-info {
+            background: #e6f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 14px;
+            color: #1a365d;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📅 面会予約システム</h1>
+        <div style="font-size: 14px; margin-top: 8px; opacity: 0.9;">前日申し込み専用・AM0:00-24:00</div>
+    </div>
+    
+    <div class="container">
+        <form id="reservationForm" class="form-card">
+            
+            <div class="form-group">
+                <label class="form-label">
+                    利用者名（入居者） <span class="required">*</span>
+                </label>
+                <input type="text" id="userName" placeholder="例：山田太郎" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">
+                    面会者名（来訪者） <span class="required">*</span>
+                </label>
+                <input type="text" id="visitorName" placeholder="例：山田花子" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">
+                    面会希望日
+                </label>
+                <div class="date-info" id="dateInfo" style="padding: 16px; text-align: center;">
+                    <!-- 日付情報がここに表示されます -->
+                </div>
+                <input type="hidden" id="date" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">
+                    面会時間 <span class="required">*</span>
+                </label>
+                
+                <div class="lunch-notice">
+                    📅 こちらは明日の面会予約専用システムです<br>
+                    📞 当日・その他の日程はお電話でご相談ください
+                </div>
+                
+                <div class="time-section">
+                    <div class="time-period">
+                        <div class="time-period-title">🌅 午前の時間帯</div>
+                        <div class="time-grid-mobile">
+                            <div class="time-slot-mobile" data-time="10:00">10:00〜</div>
+                            <div class="time-slot-mobile" data-time="10:30">10:30〜</div>
+                        </div>
+                    </div>
+                    
+                    <div class="time-period">
+                        <div class="time-period-title">🌞 午後の時間帯</div>
+                        <div class="time-grid-mobile">
+                            <div class="time-slot-mobile" data-time="14:00">14:00〜</div>
+                            <div class="time-slot-mobile" data-time="14:30">14:30〜</div>
+                            <div class="time-slot-mobile" data-time="15:00">15:00〜</div>
+                            <div class="time-slot-mobile" data-time="15:30">15:30〜</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <input type="hidden" id="selectedTime" required>
+                <div style="font-size: 14px; color: #666; margin-top: 15px; text-align: center; background: #f8f9fa; padding: 10px; border-radius: 8px;">
+                    💡 お好きな時間帯をタップしてください<br>
+                    面会時間は約30分です
+                </div>
+            </div>
+            
+            <div class="schedule-preview" id="schedulePreview">
+                <div class="schedule-title">📝 予約内容確認</div>
+                <div class="schedule-details" id="scheduleDetails"></div>
+            </div>
+            
+            <button type="submit" class="submit-btn" id="submitBtn">
+                ✅ 予約を確定する
+            </button>
+        </form>
+        
+        <div id="result"></div>
+    </div>
+    
+    <script>
+    // グローバル変数として明日の日付を保持
+    let tomorrow;
+    
+    // 日付を初期化する関数
+    function initializeTomorrowDate() {
+        const today = new Date();
+        tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        
+        const dateInput = document.getElementById('date');
+        const dateInfo = document.getElementById('dateInfo');
+        
+        // 日付情報を表示
+        const tomorrowStr = tomorrow.toLocaleDateString('ja-JP', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            weekday: 'short'
+        });
+        
+        console.log('今日:', today.toLocaleDateString('ja-JP'));
+        console.log('明日:', tomorrowStr);
+        
+        dateInfo.innerHTML = `
+            <div style="font-size: 20px; font-weight: bold; color: #1a365d;">
+                ${tomorrowStr}
+            </div>
+            <div style="font-size: 12px; color: #666; margin-top: 8px;">
+                本日24時まで予約受付中
+            </div>
+        `;
+        
+        // hidden inputに日付を設定
+        dateInput.value = tomorrow.toISOString().split('T')[0];
+    }
+    
+    // DOMが読み込まれてから実行
+    window.addEventListener('DOMContentLoaded', initializeTomorrowDate);
+    
+    // 時間選択の管理（モバイル最適化版）
+    const timeSlots = document.querySelectorAll('.time-slot-mobile');
+    const selectedTimeInput = document.getElementById('selectedTime');
+    const schedulePreview = document.getElementById('schedulePreview');
+    const scheduleDetails = document.getElementById('scheduleDetails');
+    
+    // 予約データの管理（API成功時のみLocalStorageに保存・重複チェックなし）
+    let reservations = JSON.parse(localStorage.getItem('reservationsNextDay')) || [];
+    
+    // 時間スロットクリックイベント
+    timeSlots.forEach(slot => {
+        slot.addEventListener('click', function() {
+            timeSlots.forEach(s => s.classList.remove('selected'));
+            this.classList.add('selected');
+            selectedTimeInput.value = this.dataset.time;
+            updateSchedulePreview();
+        });
+    });
+    
+    // フォーム入力監視
+    const formInputs = ['userName', 'visitorName'];
+    formInputs.forEach(inputId => {
+        document.getElementById(inputId).addEventListener('input', updateSchedulePreview);
+    });
+    
+    // 予約内容プレビュー更新
+    function updateSchedulePreview() {
+        const userName = document.getElementById('userName').value;
+        const visitorName = document.getElementById('visitorName').value;
+        const dateInput = document.getElementById('date');
+        const date = dateInput.value;
+        const time = selectedTimeInput.value;
+        
+        if (userName && visitorName && date && time) {
+            const dateObj = new Date(date);
+            const dateStr = dateObj.toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'short'
+            });
+            
+            scheduleDetails.innerHTML = `
+                <strong>面会日時：</strong>${dateStr} ${time}〜<br>
+                <strong>利用者：</strong>${userName}<br>
+                <strong>面会者：</strong>${visitorName}
+            `;
+            schedulePreview.classList.add('show');
+        } else {
+            schedulePreview.classList.remove('show');
+        }
+    }
+    
+    // フォーム送信処理
+    document.getElementById('reservationForm').onsubmit = function(e) {
+        e.preventDefault();
+        
+        const result = document.getElementById('result');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // 入力値取得
+        const dateInput = document.getElementById('date');
+        const reservation = {
+            userName: document.getElementById('userName').value.trim(),
+            visitorName: document.getElementById('visitorName').value.trim(),
+            date: dateInput.value,
+            time: selectedTimeInput.value,
+            createdAt: new Date().toISOString(),
+            id: Date.now().toString()
+        };
+        
+        // 翌日予約のバリデーション（グローバル変数のtomorrowを使用）
+        if (!tomorrow || reservation.date !== tomorrow.toISOString().split('T')[0]) {
+            result.innerHTML = `
+                <div class="result error">
+                    ❌ 翌日の予約のみ可能です
+                </div>
+            `;
+            return;
+        }
+        
+        // バリデーション
+        if (!reservation.userName || !reservation.visitorName || !reservation.date || !reservation.time) {
+            result.innerHTML = `
+                <div class="result error">
+                    ❌ すべての項目を入力してください
+                </div>
+            `;
+            return;
+        }
+        
+        // 重複チェックを無効化（同じ時間帯でも複数予約可能）
+        // 複数の面会者が同じ時間帯に面会できるようになりました
+        
+        // 送信ボタン無効化
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'LINEWORKS連携中...';
+        
+        // LINEWORKS API連携（必須）
+        fetch('mobile-reservation-api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                userName: reservation.userName,
+                visitorName: reservation.visitorName,
+                date: reservation.date,
+                time: reservation.time
+            })
+        })
+        .then(response => {
+            console.log('API Response Status:', response.status);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('API Error Response:', text);
+                    throw new Error(`HTTP Error: ${response.status} - ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.error || 'APIエラーが発生しました');
+            }
+            
+            // API成功時のみローカルストレージに保存
+            reservations.push(reservation);
+            localStorage.setItem('reservationsNextDay', JSON.stringify(reservations));
+            
+            // 成功メッセージ
+            const dateObj = new Date(reservation.date);
+            const dateStr = dateObj.toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'short'
+            });
+            
+            result.innerHTML = `
+                <div class="result success">
+                    <h3>✅ 予約が完了しました</h3>
+                    <div style="margin-top: 15px; font-size: 16px;">
+                        <strong>予約番号：</strong>${reservation.id}<br>
+                        <strong>面会日時：</strong>${dateStr} ${reservation.time}〜<br>
+                        <strong>利用者：</strong>${reservation.userName}<br>
+                        <strong>面会者：</strong>${reservation.visitorName}
+                    </div>
+                    <div style="margin-top: 15px; font-size: 14px; opacity: 0.9;">
+                        📅 LINEWORKSカレンダーに登録完了
+                    </div>
+                </div>
+            `;
+            
+            // フォームリセット
+            document.getElementById('reservationForm').reset();
+            timeSlots.forEach(s => s.classList.remove('selected'));
+            selectedTimeInput.value = '';
+            schedulePreview.classList.remove('show');
+            // 日付を再設定（valueAsDateの代わりにvalueを使用）
+            dateInput.value = tomorrow.toISOString().split('T')[0];
+            initializeTomorrowDate();
+            
+        })
+        .catch(error => {
+            console.error('LINEWORKS API Error:', error);
+            
+            // エラーの種類を判別
+            let errorTitle = '❌ 予約エラー';
+            let errorMessage = 'LINEWORKS連携でエラーが発生しました';
+            let errorDetail = error.message;
+            
+            if (error.message.includes('HTTP Error: 500')) {
+                errorTitle = '⚠️ システム一時停止中';
+                errorMessage = 'LINEWORKSサービスが一時的に利用できません';
+                errorDetail = '数分後に再度お試しください。緊急の場合は直接お電話でご連絡ください。';
+            } else if (error.message.includes('Failed to fetch')) {
+                errorTitle = '🌐 接続エラー';
+                errorMessage = 'ネットワーク接続を確認してください';
+                errorDetail = 'インターネット接続が不安定な可能性があります。';
+            }
+            
+            // APIエラー時はエラー表示
+            result.innerHTML = `
+                <div class="result error">
+                    <h3>${errorTitle}</h3>
+                    <div style="margin-top: 15px; font-size: 16px;">
+                        ${errorMessage}
+                    </div>
+                    <div style="margin-top: 10px; font-size: 14px; opacity: 0.9;">
+                        ${errorDetail}
+                    </div>
+                    <div style="margin-top: 15px; font-size: 12px; opacity: 0.7;">
+                        技術詳細: ${error.message}
+                    </div>
+                </div>
+            `;
+        })
+        .finally(() => {
+            // ボタン復元
+            submitBtn.disabled = false;
+            submitBtn.textContent = '✅ 予約を確定する';
+            
+            // 結果までスクロール
+            result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    };
+    
+    console.log('面会予約システム（前日申し込み専用）が読み込まれました');
+    
+    // フォームが読み込まれたことを確認
+    setTimeout(() => {
+        console.log('フォーム初期化完了');
+        const dateInfo = document.getElementById('dateInfo');
+        const dateInput = document.getElementById('date');
+        console.log('日付情報:', dateInfo ? dateInfo.textContent : 'not found');
+        console.log('日付入力欄:', dateInput ? dateInput.value : 'not found');
+        if (tomorrow) {
+            console.log('面会希望日：', tomorrow.toLocaleDateString('ja-JP'));
+        }
+    }, 100);
+    </script>
+</body>
+</html>
